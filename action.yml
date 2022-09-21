@@ -14,6 +14,10 @@ inputs:
     description: "Uploads workflow & uploads tag builds to a release"
     required: false
     default: "true"
+  skip-frontend:
+    description: "Uploads workflow & uploads tag builds to a release"
+    required: false
+    default: "false"
   build-name:
     description: "The name of the binary file"
     required: true
@@ -100,17 +104,18 @@ runs:
         go-version: ${{inputs.go-version}}
     # Setup and configure NodeJS
     - name: Setup NodeJS
+      if: inputs.skip-frontend == 'false'
       uses: actions/setup-node@v2
       with:
         node-version: ${{inputs.node-version}}
     # (Optional) Setup and configure Deno
     - name: Setup Deno
       uses: denoland/setup-deno@v1
-      if: inputs.deno-build != ''
+      if: inputs.deno-build != '' && inputs.skip-frontend == 'false'
       with:
         deno-version: ${{inputs.deno-version}}
     - name: Run Deno Command
-      if: inputs.deno-build != ''
+      if: inputs.deno-build != '' && inputs.skip-frontend == 'false'
       shell: bash
       working-directory: ${{inputs.deno-working-directory}}
       run: ${{inputs.deno-build}}
@@ -129,19 +134,33 @@ runs:
       shell: bash
     # Building step
     - name: Build App
-      if: inputs.build == 'true' && runner.os == 'macOS'
+      if: inputs.build == 'true' && runner.os == 'macOS' && inputs.skip-frontend == 'false'
       working-directory: ${{ inputs.app-working-directory }}
       run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
       shell: bash
     - name: Build App
-      if: inputs.build == 'true' &&  runner.os == 'Linux'
+      if: inputs.build == 'true' &&  runner.os == 'Linux' && inputs.skip-frontend == 'false'
       working-directory: ${{ inputs.app-working-directory }}
       run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
       shell: bash
     - name: Build App
-      if: inputs.build == 'true' && runner.os == 'Windows'
+      if: inputs.build == 'true' && runner.os == 'Windows' && inputs.skip-frontend == 'false'
       working-directory: ${{ inputs.app-working-directory }}
       run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
+    - name: Build App
+      if: inputs.build == 'true' && runner.os == 'macOS' && inputs.skip-frontend == 'true'
+      working-directory: ${{ inputs.app-working-directory }}
+      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}} -s
+      shell: bash
+    - name: Build App
+      if: inputs.build == 'true' &&  runner.os == 'Linux' && inputs.skip-frontend == 'true'
+      working-directory: ${{ inputs.app-working-directory }}
+      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}} -s
+      shell: bash
+    - name: Build App
+      if: inputs.build == 'true' && runner.os == 'Windows' && inputs.skip-frontend == 'true'
+      working-directory: ${{ inputs.app-working-directory }}
+      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}} -s
       shell: bash
     - name: Add macOS perms
       if: inputs.build == 'true' && runner.os == 'macOS'
